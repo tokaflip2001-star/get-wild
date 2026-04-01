@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AR最終完成版</title>
+    <title>AR最終完成版_動画リペア</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
     <style>
         body { margin: 0; overflow: hidden; position: fixed; width: 100%; height: 100%; background: #000; }
-        /* 開始ボタン */
         #start-button {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 9999; padding: 20px 40px; background: #28a745; color: white;
             border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
         }
-        /* 誘導ボタン（最初は隠しておく） */
         #link-button {
             display: none; position: fixed; bottom: 10%; left: 50%; transform: translateX(-50%);
             z-index: 8888; padding: 15px 30px; background: rgba(0, 123, 255, 0.9); color: white;
@@ -33,18 +31,21 @@
         renderer="colorManagement: true, precision: medium">
         
         <a-assets>
-            <video id="v" src="./intro_video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+            <video id="v" src="./intro_video.mp4" 
+                   preload="auto" loop="true" crossorigin="anonymous" 
+                   playsinline webkit-playsinline muted autoplay></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="t" mindar-image-target="targetIndex: 0">
-            <a-video src="#v" width="1" height="1" position="0 0 0.1"></a-video>
+            <a-video id="ar-video" src="#v" width="1" height="1" position="0 0 0.1" visible="false"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const video = document.querySelector("#v");
+        const arVideoObj = document.querySelector("#ar-video");
         const startBtn = document.querySelector("#start-button");
         const linkBtn = document.querySelector("#link-button");
 
@@ -53,31 +54,25 @@
             const arSystem = sceneEl.systems["mindar-image-system"];
             startBtn.style.display = "none";
             
-            // 重要：ここで一度動画を再生して「ユーザー操作」をブラウザに覚えさせる
-            video.play().then(() => {
-                video.pause();
-                video.muted = false; // 音を出せるようにする
-                arSystem.start();
-            }).catch(e => {
-                console.log("初期再生エラー:", e);
-                arSystem.start();
-            });
+            // 【重要】ボタンを押した瞬間に、ミュート状態で動画を強制再生
+            video.play();
+            
+            // その後でARシステムを開始
+            arSystem.start();
         }
 
         const targetEl = document.querySelector('#t');
 
-        // 画像を見つけた時
         targetEl.addEventListener("targetFound", () => {
-            console.log("発見");
-            video.play();
-            linkBtn.style.display = "block"; // ボタンを表示
+            // 画像を見つけたら、ミュートを解除して表示をONにする
+            video.muted = false;
+            arVideoObj.setAttribute("visible", "true");
+            linkBtn.style.display = "block";
         });
 
-        // 画像を見失った時
         targetEl.addEventListener("targetLost", () => {
-            console.log("ロスト");
-            video.pause();
-            linkBtn.style.display = "none"; // ボタンを隠す
+            arVideoObj.setAttribute("visible", "false");
+            linkBtn.style.display = "none";
         });
     </script>
 </body>
